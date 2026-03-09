@@ -1,0 +1,307 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === BEAST KOMBAT FONT FACES === */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque[opsz,wdth,wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/assets/fonts/GeistMono[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Mona Sans";
+  src: url("/assets/fonts/Mona-Sans.woff2") format("woff2");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.25rem;
+
+    /* Beast Kombat — dark arcade theme */
+    --background: 0.08 0.01 280;
+    --foreground: 0.97 0.02 90;
+    --card: 0.12 0.015 280;
+    --card-foreground: 0.97 0.02 90;
+    --popover: 0.10 0.012 280;
+    --popover-foreground: 0.97 0.02 90;
+
+    /* Electric blue primary */
+    --primary: 0.65 0.22 240;
+    --primary-foreground: 0.08 0.01 280;
+
+    /* Hot pink secondary */
+    --secondary: 0.62 0.28 340;
+    --secondary-foreground: 0.97 0.02 90;
+
+    /* Muted dark */
+    --muted: 0.15 0.01 280;
+    --muted-foreground: 0.55 0.05 280;
+
+    /* Toxic green accent */
+    --accent: 0.72 0.22 145;
+    --accent-foreground: 0.08 0.01 280;
+
+    --destructive: 0.65 0.28 25;
+    --destructive-foreground: 0.97 0.02 90;
+
+    --border: 0.22 0.04 280;
+    --input: 0.18 0.03 280;
+    --ring: 0.65 0.22 240;
+
+    /* Chart colors */
+    --chart-1: 0.65 0.22 240;
+    --chart-2: 0.62 0.28 340;
+    --chart-3: 0.72 0.22 145;
+    --chart-4: 0.75 0.20 60;
+    --chart-5: 0.65 0.28 25;
+
+    /* Sidebar */
+    --sidebar: 0.10 0.012 280;
+    --sidebar-foreground: 0.97 0.02 90;
+    --sidebar-primary: 0.65 0.22 240;
+    --sidebar-primary-foreground: 0.08 0.01 280;
+    --sidebar-accent: 0.15 0.02 280;
+    --sidebar-accent-foreground: 0.97 0.02 90;
+    --sidebar-border: 0.22 0.04 280;
+    --sidebar-ring: 0.65 0.22 240;
+
+    /* Game-specific tokens */
+    --neon-blue: #00d4ff;
+    --neon-pink: #ff00aa;
+    --neon-green: #00ff88;
+    --neon-yellow: #ffee00;
+    --neon-red: #ff2244;
+    --neon-orange: #ff8800;
+    --dark-bg: #0a0a0f;
+    --dark-panel: rgba(10, 10, 20, 0.85);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Mona Sans", system-ui, sans-serif;
+    background-color: #0a0a0f;
+    overflow: hidden;
+  }
+
+  #root {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0a0a0f;
+  }
+}
+
+/* === GAME SPECIFIC STYLES === */
+.game-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #0d0d1a 0%, #0a0a0f 70%);
+  overflow: hidden;
+}
+
+.game-wrapper {
+  position: relative;
+  width: min(800px, 100vw);
+  aspect-ratio: 16/9;
+}
+
+.game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 2px solid var(--neon-blue);
+  box-shadow:
+    0 0 20px var(--neon-blue),
+    0 0 60px rgba(0, 212, 255, 0.15),
+    inset 0 0 20px rgba(0, 212, 255, 0.05);
+  cursor: none;
+}
+
+/* Scanline overlay for CRT effect */
+.game-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Mobile controls */
+.mobile-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  background: rgba(10, 10, 20, 0.9);
+  border-top: 1px solid var(--neon-blue);
+  z-index: 20;
+}
+
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(3, 40px);
+  gap: 2px;
+}
+
+.dpad-btn {
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  border-radius: 4px;
+  color: var(--neon-blue);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background 0.1s;
+}
+
+.dpad-btn:active,
+.dpad-btn.pressed {
+  background: rgba(0, 212, 255, 0.3);
+  box-shadow: 0 0 8px var(--neon-blue);
+}
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(2, 40px);
+  gap: 4px;
+}
+
+.action-btn {
+  border-radius: 50%;
+  font-family: "Geist Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid;
+  transition: all 0.1s;
+}
+
+.action-btn:active,
+.action-btn.pressed {
+  transform: scale(0.9);
+  filter: brightness(1.5);
+}
+
+.btn-punch {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--neon-blue);
+  color: var(--neon-blue);
+}
+
+.btn-kick {
+  background: rgba(255, 0, 170, 0.15);
+  border-color: var(--neon-pink);
+  color: var(--neon-pink);
+}
+
+.btn-block {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: var(--neon-green);
+  color: var(--neon-green);
+}
+
+.btn-special {
+  background: rgba(255, 238, 0, 0.15);
+  border-color: var(--neon-yellow);
+  color: var(--neon-yellow);
+}
+
+.btn-finisher {
+  background: rgba(255, 34, 68, 0.15);
+  border-color: var(--neon-red);
+  color: var(--neon-red);
+  animation: pulse-red 1s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 5px var(--neon-red); }
+  50% { box-shadow: 0 0 15px var(--neon-red), 0 0 30px rgba(255, 34, 68, 0.4); }
+}
+
+@keyframes pulseMobileBtn {
+  0%, 100% { box-shadow: 0 0 4px currentColor; }
+  50% { box-shadow: 0 0 14px currentColor, 0 0 24px rgba(255, 34, 68, 0.3); }
+}
+
+/* Scaled game wrapper */
+.game-wrapper-scaled {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ensure body/root allow full viewport usage without overflow on mobile */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Neon text utilities */
+.neon-text-blue {
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px var(--neon-blue), 0 0 20px rgba(0, 212, 255, 0.5);
+}
+
+.neon-text-pink {
+  color: var(--neon-pink);
+  text-shadow: 0 0 10px var(--neon-pink), 0 0 20px rgba(255, 0, 170, 0.5);
+}
+
+.neon-text-green {
+  color: var(--neon-green);
+  text-shadow: 0 0 10px var(--neon-green), 0 0 20px rgba(0, 255, 136, 0.5);
+}
+
+.neon-text-yellow {
+  color: var(--neon-yellow);
+  text-shadow: 0 0 10px var(--neon-yellow), 0 0 20px rgba(255, 238, 0, 0.5);
+}
