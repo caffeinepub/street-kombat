@@ -136,6 +136,10 @@ export default function FightingGame() {
   const p2CharIndexRef = useRef(1);
   const p1ConfirmedRef = useRef(false);
   const p2ConfirmedRef = useRef(false);
+  const leaderboardDataRef = useRef<typeof leaderboardData>([]);
+  const recordMatchMutationRef = useRef<typeof recordMatchMutation | null>(
+    null,
+  );
 
   // Mobile / responsive state
   const [scale, setScale] = useState(1);
@@ -610,6 +614,14 @@ export default function FightingGame() {
     }
   }, [p1Confirmed, p2Confirmed, proceedFromCharSelect]);
 
+  // Keep refs in sync
+  useEffect(() => {
+    leaderboardDataRef.current = leaderboardData;
+  }, [leaderboardData]);
+  useEffect(() => {
+    recordMatchMutationRef.current = recordMatchMutation;
+  }, [recordMatchMutation]);
+
   // Main game loop
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -893,7 +905,7 @@ export default function FightingGame() {
             gs.matchWinner = "player";
             gs.phase = "matchEnd";
             setPhase("matchEnd");
-            recordMatchMutation.mutate({ result: "player" });
+            recordMatchMutationRef.current?.mutate({ result: "player" });
           } else if (gs.cpu.roundsWon >= ROUNDS_TO_WIN) {
             gs.matchWinner = "cpu";
             gs.phase = "matchEnd";
@@ -902,7 +914,7 @@ export default function FightingGame() {
             gs.matchWinner = "draw";
             gs.phase = "matchEnd";
             setPhase("matchEnd");
-            recordMatchMutation.mutate({ result: "draw" });
+            recordMatchMutationRef.current?.mutate({ result: "draw" });
           } else {
             gs.round++;
             const p1CharDef = CHARACTERS[p1CharIndexRef.current];
@@ -993,7 +1005,7 @@ export default function FightingGame() {
       } else if (gs.phase === "leaderboard") {
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         drawBackground(ctx, gs.menuAnimTimer);
-        drawLeaderboard(ctx, leaderboardData, gs.menuAnimTimer);
+        drawLeaderboard(ctx, leaderboardDataRef.current, gs.menuAnimTimer);
       }
 
       rafRef.current = requestAnimationFrame(gameLoop);
@@ -1008,7 +1020,7 @@ export default function FightingGame() {
       isRunning = false;
       cancelAnimationFrame(rafRef.current);
     };
-  }, [leaderboardData, recordMatchMutation]);
+  }, []);
 
   // Overlay text clearing
   // biome-ignore lint/correctness/useExhaustiveDependencies: we use phase as a trigger to read gameStateRef imperatively
@@ -1375,8 +1387,8 @@ export default function FightingGame() {
               justifyContent: "space-between",
               alignItems: "flex-end",
               padding: "6px 10px 8px",
-              background: "rgba(6, 6, 18, 0.92)",
-              borderTop: "1px solid rgba(0,212,255,0.4)",
+              background: "rgba(6, 6, 18, 0)",
+              borderTop: "none",
               zIndex: 20,
               gap: 8,
             }}
@@ -1494,7 +1506,7 @@ export default function FightingGame() {
               alignItems: "center",
               padding: "10px 12px 12px",
               background: "rgba(6, 6, 18, 0.95)",
-              borderTop: "1px solid rgba(0,212,255,0.4)",
+              borderTop: "none",
               zIndex: 20,
               gap: 8,
               fontFamily: "'Geist Mono', monospace",
