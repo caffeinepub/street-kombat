@@ -162,20 +162,30 @@ export default function FightingGame() {
     const update = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const computedScale = Math.min(vw / CANVAS_WIDTH, vh / CANVAS_HEIGHT);
+      // Reserve 40px for the keyboard legend on desktop, 0 on mobile
+      const isTouchDevice =
+        "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      const legendPad = isTouchDevice || vw < 900 ? 0 : 40;
+      const computedScale = Math.min(
+        vw / CANVAS_WIDTH,
+        (vh - legendPad) / CANVAS_HEIGHT,
+      );
       setScale(computedScale);
 
-      const mobile = vw < 900 || "ontouchstart" in window;
+      const mobile = vw < 900 || isTouchDevice;
       setIsMobile(mobile);
       setIsPortrait(mobile && vh > vw);
     };
 
+    // orientationchange fires before dimensions update — delay to get correct values
+    const handleOrientation = () => setTimeout(update, 150);
+
     update();
     window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
+    window.addEventListener("orientationchange", handleOrientation);
     return () => {
       window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
+      window.removeEventListener("orientationchange", handleOrientation);
     };
   }, []);
 
@@ -1395,73 +1405,41 @@ export default function FightingGame() {
             data-ocid="mobile_controls.panel"
           >
             {/* D-Pad */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 48px)",
-                gridTemplateRows: "repeat(3, 48px)",
-                gap: 2,
-              }}
-            >
-              <div />
-              <MobileBtn
-                label="▲"
-                active={!!mobileButtons.up}
-                onDown={() => handleMobileDown("up")}
-                onUp={() => handleMobileUp("up")}
-                color="#00d4ff"
-                data-ocid="mobile_controls.button"
-              />
-              <div />
-              <MobileBtn
-                label="◀"
-                active={!!mobileButtons.left}
-                onDown={() => handleMobileDown("left")}
-                onUp={() => handleMobileUp("left")}
-                color="#00d4ff"
-              />
-              <MobileBtn
-                label="▼"
-                active={!!mobileButtons.down}
-                onDown={() => handleMobileDown("down")}
-                onUp={() => handleMobileUp("down")}
-                color="#00d4ff"
-              />
-              <MobileBtn
-                label="▶"
-                active={!!mobileButtons.right}
-                onDown={() => handleMobileDown("right")}
-                onUp={() => handleMobileUp("right")}
-                color="#00d4ff"
-              />
-            </div>
+            <DPad
+              mobileButtons={mobileButtons}
+              handleMobileDown={handleMobileDown}
+              handleMobileUp={handleMobileUp}
+            />
 
             {/* Action buttons — 2 rows × 3 cols */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 54px)",
-                gridTemplateRows: "repeat(2, 54px)",
-                gap: 5,
+                gridTemplateColumns: "repeat(3, 62px)",
+                gridTemplateRows: "repeat(2, 62px)",
+                gap: 6,
               }}
             >
               <MobileActionBtn
                 label="PUNCH"
+                symbol="Y"
                 active={!!mobileButtons.punch}
                 onDown={() => handleMobileDown("punch")}
                 onUp={() => handleMobileUp("punch")}
-                color="#00d4ff"
+                color="#ffee00"
                 data-ocid="mobile_controls.button"
               />
               <MobileActionBtn
                 label="KICK"
+                symbol="B"
                 active={!!mobileButtons.kick}
                 onDown={() => handleMobileDown("kick")}
                 onUp={() => handleMobileUp("kick")}
-                color="#ff00aa"
+                color="#ff2244"
               />
               <MobileActionBtn
                 label="BLOCK"
+                symbol="A"
                 active={!!mobileButtons.block}
                 onDown={() => handleMobileDown("block")}
                 onUp={() => handleMobileUp("block")}
@@ -1469,20 +1447,23 @@ export default function FightingGame() {
               />
               <MobileActionBtn
                 label="C.PCH"
+                symbol="X"
                 active={!!mobileButtons.crouchPunch}
                 onDown={() => handleMobileDown("crouchPunch")}
                 onUp={() => handleMobileUp("crouchPunch")}
-                color="#ffee00"
+                color="#00d4ff"
               />
               <MobileActionBtn
                 label="C.KCK"
+                symbol="ZL"
                 active={!!mobileButtons.crouchKick}
                 onDown={() => handleMobileDown("crouchKick")}
                 onUp={() => handleMobileUp("crouchKick")}
-                color="#ffee00"
+                color="#00d4ff"
               />
               <MobileActionBtn
                 label="FINISH"
+                symbol="ZR"
                 active={!!mobileButtons.finisher}
                 onDown={() => handleMobileDown("finisher")}
                 onUp={() => handleMobileUp("finisher")}
@@ -1657,6 +1638,170 @@ export default function FightingGame() {
           </div>
         )}
 
+        {/* Desktop keyboard legend */}
+        {!isMobile &&
+          (phase === "fighting" || phase === "finisherSequence") && (
+            <div
+              style={{
+                position: "absolute",
+                bottom: 8,
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 20,
+                display: "flex",
+                gap: 20,
+                alignItems: "center",
+                background: "rgba(4, 4, 14, 0.75)",
+                border: "1px solid rgba(0,212,255,0.25)",
+                borderRadius: 6,
+                padding: "6px 16px",
+                backdropFilter: "blur(6px)",
+                fontFamily: "'Geist Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.05em",
+                color: "rgba(200,230,255,0.65)",
+                pointerEvents: "none",
+                whiteSpace: "nowrap",
+              }}
+              data-ocid="desktop_controls.panel"
+            >
+              <span
+                style={{
+                  color: "rgba(0,212,255,0.8)",
+                  fontWeight: 700,
+                  fontSize: 9,
+                  letterSpacing: "0.12em",
+                }}
+              >
+                P1
+              </span>
+              {[
+                ["←→", "Move"],
+                ["↑", "Jump"],
+                ["↓", "Crouch"],
+                ["A", "Punch"],
+                ["S", "Kick"],
+                ["D", "Block"],
+                ["F", "Finish"],
+              ].map(([key, label]) => (
+                <span
+                  key={key}
+                  style={{ display: "flex", alignItems: "center", gap: 4 }}
+                >
+                  <kbd
+                    style={{
+                      background: "rgba(0,212,255,0.12)",
+                      border: "1px solid rgba(0,212,255,0.35)",
+                      borderRadius: 3,
+                      padding: "1px 5px",
+                      fontSize: 10,
+                      color: "#00d4ff",
+                      fontFamily: "'Geist Mono', monospace",
+                    }}
+                  >
+                    {key}
+                  </kbd>
+                  <span style={{ opacity: 0.6 }}>{label}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
+        {/* Desktop character select hint */}
+        {!isMobile && phase === "characterSelect" && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 8,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 20,
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+              background: "rgba(4, 4, 14, 0.75)",
+              border: "1px solid rgba(0,212,255,0.25)",
+              borderRadius: 6,
+              padding: "6px 16px",
+              backdropFilter: "blur(6px)",
+              fontFamily: "'Geist Mono', monospace",
+              fontSize: 10,
+              letterSpacing: "0.05em",
+              color: "rgba(200,230,255,0.65)",
+              pointerEvents: "none",
+              whiteSpace: "nowrap",
+            }}
+            data-ocid="desktop_char_select.panel"
+          >
+            {[
+              ["← →", "Select"],
+              ["Enter", "Confirm"],
+            ].map(([key, label]) => (
+              <span
+                key={key}
+                style={{ display: "flex", alignItems: "center", gap: 4 }}
+              >
+                <kbd
+                  style={{
+                    background: "rgba(0,212,255,0.12)",
+                    border: "1px solid rgba(0,212,255,0.35)",
+                    borderRadius: 3,
+                    padding: "1px 5px",
+                    fontSize: 10,
+                    color: "#00d4ff",
+                    fontFamily: "'Geist Mono', monospace",
+                  }}
+                >
+                  {key}
+                </kbd>
+                <span style={{ opacity: 0.6 }}>{label}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Desktop menu hint */}
+        {!isMobile && (phase === "menu" || phase === "matchEnd") && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 20,
+              background: "rgba(4, 4, 14, 0.75)",
+              border: "1px solid rgba(0,212,255,0.25)",
+              borderRadius: 6,
+              padding: "5px 14px",
+              backdropFilter: "blur(6px)",
+              fontFamily: "'Geist Mono', monospace",
+              fontSize: 10,
+              letterSpacing: "0.1em",
+              color: "rgba(200,230,255,0.65)",
+              pointerEvents: "none",
+              whiteSpace: "nowrap",
+            }}
+            data-ocid="desktop_menu.panel"
+          >
+            <kbd
+              style={{
+                background: "rgba(0,212,255,0.12)",
+                border: "1px solid rgba(0,212,255,0.35)",
+                borderRadius: 3,
+                padding: "1px 6px",
+                fontSize: 10,
+                color: "#00d4ff",
+                fontFamily: "'Geist Mono', monospace",
+              }}
+            >
+              Enter
+            </kbd>
+            <span style={{ marginLeft: 6 }}>
+              {phase === "menu" ? "Start Game" : "Play Again"}
+            </span>
+          </div>
+        )}
+
         {/* Mobile start buttons */}
         {isMobile && (phase === "menu" || phase === "matchEnd") && (
           <div
@@ -1756,65 +1901,154 @@ export default function FightingGame() {
 
 // === MOBILE BUTTON HELPERS ===
 
-interface MobileBtnProps {
-  label: string;
-  active: boolean;
-  onDown: () => void;
-  onUp: () => void;
-  color: string;
-  "data-ocid"?: string;
+// ─── Joy-Con Style D-Pad ────────────────────────────────────────────────────
+interface DPadProps {
+  mobileButtons: Record<string, boolean | undefined>;
+  handleMobileDown: (key: string) => void;
+  handleMobileUp: (key: string) => void;
 }
 
-function MobileBtn({
-  label,
-  active,
-  onDown,
-  onUp,
-  color,
-  "data-ocid": ocid,
-}: MobileBtnProps) {
+function DPad({ mobileButtons, handleMobileDown, handleMobileUp }: DPadProps) {
+  const size = 148;
+  const armW = 46;
+  const armH = 58;
+  const center = size / 2;
+
+  const makeArm = (key: string, style: React.CSSProperties, arrow: string) => {
+    const active = !!mobileButtons[key];
+    return (
+      <div
+        key={key}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          handleMobileDown(key);
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          handleMobileUp(key);
+        }}
+        onMouseDown={() => handleMobileDown(key)}
+        onMouseUp={() => handleMobileUp(key)}
+        onMouseLeave={() => handleMobileUp(key)}
+        style={{
+          position: "absolute",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 6,
+          cursor: "pointer",
+          userSelect: "none",
+          WebkitTapHighlightColor: "transparent",
+          touchAction: "manipulation",
+          background: active ? "rgba(0,212,255,0.38)" : "rgba(0,212,255,0.10)",
+          border: `1.5px solid ${active ? "#00d4ff" : "rgba(0,212,255,0.35)"}`,
+          boxShadow: active
+            ? "0 0 14px #00d4ff, inset 0 0 8px rgba(0,212,255,0.4)"
+            : "inset 0 0 4px rgba(0,212,255,0.15)",
+          transition: "all 0.07s ease",
+          color: active ? "#00d4ff" : "rgba(0,212,255,0.6)",
+          fontSize: 14,
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+          transform: active ? "scale(0.94)" : "scale(1)",
+          ...style,
+        }}
+      >
+        {arrow}
+      </div>
+    );
+  };
+
   return (
-    <button
-      type="button"
-      data-ocid={ocid}
-      onTouchStart={(e) => {
-        e.preventDefault();
-        onDown();
-      }}
-      onTouchEnd={(e) => {
-        e.preventDefault();
-        onUp();
-      }}
-      onMouseDown={onDown}
-      onMouseUp={onUp}
-      onMouseLeave={onUp}
+    <div
       style={{
-        background: active
-          ? `rgba(${hexToRgb(color)},0.3)`
-          : `rgba(${hexToRgb(color)},0.08)`,
-        border: `1px solid ${active ? color : `rgba(${hexToRgb(color)},0.4)`}`,
-        borderRadius: 4,
-        color,
-        fontSize: 16,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        userSelect: "none",
-        WebkitTapHighlightColor: "transparent",
-        touchAction: "manipulation",
-        transition: "background 0.08s",
-        boxShadow: active ? `0 0 8px ${color}` : "none",
-        fontFamily: "'Geist Mono', monospace",
+        position: "relative",
+        width: size,
+        height: size,
+        flexShrink: 0,
       }}
     >
-      {label}
-    </button>
+      {/* Outer disc */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "50%",
+          background: "rgba(0,0,0,0.45)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          border: "2px solid rgba(0,212,255,0.25)",
+          boxShadow:
+            "0 4px 24px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,212,255,0.05)",
+        }}
+      />
+      {/* Up */}
+      {makeArm(
+        "up",
+        {
+          width: armW,
+          height: armH,
+          top: center - armH - armW / 2 + armW / 2,
+          left: center - armW / 2,
+        },
+        "▲",
+      )}
+      {/* Down */}
+      {makeArm(
+        "down",
+        {
+          width: armW,
+          height: armH,
+          bottom: center - armH - armW / 2 + armW / 2,
+          left: center - armW / 2,
+        },
+        "▼",
+      )}
+      {/* Left */}
+      {makeArm(
+        "left",
+        {
+          width: armH,
+          height: armW,
+          left: center - armH - armW / 2 + armW / 2,
+          top: center - armW / 2,
+        },
+        "◀",
+      )}
+      {/* Right */}
+      {makeArm(
+        "right",
+        {
+          width: armH,
+          height: armW,
+          right: center - armH - armW / 2 + armW / 2,
+          top: center - armW / 2,
+        },
+        "▶",
+      )}
+      {/* Center nub */}
+      <div
+        style={{
+          position: "absolute",
+          width: armW,
+          height: armW,
+          top: center - armW / 2,
+          left: center - armW / 2,
+          borderRadius: "50%",
+          background: "rgba(0,20,30,0.7)",
+          border: "1.5px solid rgba(0,212,255,0.3)",
+          boxShadow: "inset 0 2px 6px rgba(0,0,0,0.6)",
+          pointerEvents: "none",
+        }}
+      />
+    </div>
   );
 }
 
+// ─── Joy-Con Action Button ───────────────────────────────────────────────────
 interface MobileActionBtnProps {
   label: string;
+  symbol: string;
   active: boolean;
   onDown: () => void;
   onUp: () => void;
@@ -1825,6 +2059,7 @@ interface MobileActionBtnProps {
 
 function MobileActionBtn({
   label,
+  symbol,
   active,
   onDown,
   onUp,
@@ -1832,6 +2067,7 @@ function MobileActionBtn({
   pulse,
   "data-ocid": ocid,
 }: MobileActionBtnProps) {
+  const rgb = hexToRgb(color);
   return (
     <button
       type="button"
@@ -1849,34 +2085,74 @@ function MobileActionBtn({
       onMouseLeave={onUp}
       style={{
         borderRadius: "50%",
-        background: active
-          ? `rgba(${hexToRgb(color)},0.35)`
-          : `rgba(${hexToRgb(color)},0.1)`,
-        border: `2px solid ${color}`,
-        color,
-        fontSize: 9,
-        fontWeight: 800,
-        fontFamily: "'Geist Mono', monospace",
+        width: "100%",
+        height: "100%",
+        background: active ? `rgba(${rgb},0.40)` : `rgba(${rgb},0.10)`,
+        border: `2px solid ${active ? color : `rgba(${rgb},0.45)`}`,
+        boxShadow: active
+          ? `0 0 16px ${color}, 0 0 40px rgba(${rgb},0.3), inset 0 0 10px rgba(${rgb},0.25)`
+          : pulse
+            ? `0 0 10px rgba(${rgb},0.5), inset 0 0 6px rgba(${rgb},0.1)`
+            : `inset 0 0 6px rgba(${rgb},0.08)`,
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         cursor: "pointer",
         userSelect: "none",
         WebkitTapHighlightColor: "transparent",
         touchAction: "manipulation",
-        transform: active ? "scale(0.9)" : "scale(1)",
-        transition: "all 0.08s",
-        boxShadow: active
-          ? `0 0 12px ${color}`
-          : pulse
-            ? `0 0 6px ${color}`
-            : "none",
+        transform: active ? "scale(0.88)" : "scale(1)",
+        transition: "all 0.08s ease",
         animation:
-          pulse && !active ? "pulseMobileBtn 1s ease-in-out infinite" : "none",
-        letterSpacing: "0.02em",
+          pulse && !active ? "joyconPulse 1.2s ease-in-out infinite" : "none",
+        position: "relative",
+        overflow: "hidden",
+        gap: 1,
       }}
     >
-      {label}
+      <style>{`
+        @keyframes joyconPulse {
+          0%, 100% { box-shadow: 0 0 8px rgba(${rgb},0.4), inset 0 0 6px rgba(${rgb},0.1); border-color: rgba(${rgb},0.45); }
+          50% { box-shadow: 0 0 20px ${color}, 0 0 40px rgba(${rgb},0.3), inset 0 0 10px rgba(${rgb},0.25); border-color: ${color}; }
+        }
+      `}</style>
+      {/* Symbol circle */}
+      <div
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: "50%",
+          background: active ? color : `rgba(${rgb},0.25)`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 10,
+          fontWeight: 900,
+          fontFamily: "'Geist Mono', monospace",
+          color: active ? "#000" : color,
+          transition: "all 0.08s",
+          boxShadow: active ? `0 0 8px ${color}` : "none",
+          flexShrink: 0,
+        }}
+      >
+        {symbol}
+      </div>
+      {/* Label */}
+      <span
+        style={{
+          fontSize: 7,
+          fontWeight: 700,
+          fontFamily: "'Geist Mono', monospace",
+          color: active ? color : `rgba(${rgb},0.6)`,
+          letterSpacing: "0.04em",
+          lineHeight: 1,
+        }}
+      >
+        {label}
+      </span>
     </button>
   );
 }
